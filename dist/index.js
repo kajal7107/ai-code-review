@@ -52,7 +52,7 @@ const GITHUB_TOKEN = core.getInput("GITHUB_TOKEN");
 const OPENAI_API_KEY = core.getInput("OPENAI_API_KEY");
 const OPENAI_API_MODEL = core.getInput("OPENAI_API_MODEL");
 const octokit = new rest_1.Octokit({ auth: GITHUB_TOKEN });
-const openai = new openai_1.OpenAIClient("https://ai-azureaireviewerai470495481559.openai.azure.com/openai/deployments/gpt-4/chat/completions?api-version=2023-03-15-preview", new openai_1.AzureKeyCredential("7e8a3b68f9354d0ab94f5488c71496d9"));
+const openai = new openai_1.OpenAIClient("https://reviewer-ai.openai.azure.com/", new openai_1.AzureKeyCredential(OPENAI_API_KEY));
 function getPRDetails() {
     var _a, _b;
     return __awaiter(this, void 0, void 0, function* () {
@@ -144,7 +144,7 @@ function getAIResponse(prompt) {
             presence_penalty: 0,
         };
         try {
-            const response = yield openai.getChatCompletions("gpt-4", [{ role: "system", content: prompt }]);
+            const response = yield openai.getChatCompletions("reviewer-ai", [{ role: "system", content: prompt }]);
             const res = ((_b = (_a = response.choices[0].message) === null || _a === void 0 ? void 0 : _a.content) === null || _b === void 0 ? void 0 : _b.trim()) || "{}";
             return JSON.parse(res).reviews;
         }
