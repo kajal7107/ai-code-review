@@ -123,7 +123,7 @@ async function getAIResponse(prompt: string): Promise<Array<{
 
   try {
     const response = await openai.getChatCompletions(
-      "gpt-4",
+      "reviewer-ai",
      [ {role:"system", content: prompt}],
     );
 
