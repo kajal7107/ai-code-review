@@ -11,7 +11,7 @@ const OPENAI_API_MODEL: string = core.getInput("OPENAI_API_MODEL");
 
 const octokit = new Octokit({ auth: GITHUB_TOKEN });
 
-const openai = new OpenAIClient(new AzureKeyCredential(OPENAI_API_KEY) ) ;
+const openai = new OpenAIClient("https://reviewer-ai.openai.azure.com/",new AzureKeyCredential(OPENAI_API_KEY) ) ;
 
 interface PRDetails {
   owner: string;
