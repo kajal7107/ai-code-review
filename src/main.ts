@@ -11,7 +11,7 @@ const OPENAI_API_MODEL: string = core.getInput("OPENAI_API_MODEL");
 
 const octokit = new Octokit({ auth: GITHUB_TOKEN });
 
-const openai = new OpenAIClient("https://ai-azureaireviewerai470495481559.openai.azure.com/",new AzureKeyCredential("7e8a3b68f9354d0ab94f5488c71496d9") ) ;
+const openai = new OpenAIClient("https://ai-azureaireviewerai470495481559.openai.azure.com/openai/deployments/gpt-4/chat/completions?api-version=2023-03-15-preview",new AzureKeyCredential("7e8a3b68f9354d0ab94f5488c71496d9") ) ;
 
 interface PRDetails {
   owner: string;
@@ -123,7 +123,7 @@ async function getAIResponse(prompt: string): Promise<Array<{
 
   try {
     const response = await openai.getChatCompletions(
-      "reviewer-ai",
+      "gpt-4",
      [ {role:"system", content: prompt}],
     );
 
