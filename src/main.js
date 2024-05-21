@@ -1,23 +1,23 @@
-import { readFileSync } from "fs";
-import * as core from "@actions/core";
-import {OpenAIClient, AzureKeyCredential }from "@azure/openai";
-import { Octokit } from "@octokit/rest";
-import parseDiff, { Chunk, File } from "parse-diff";
-import minimatch from "minimatch";
-import express, { Request, Response } from 'express';
+const { readFileSync } = require("fs");
+const core = require("@actions/core");
+const { OpenAIClient, AzureKeyCredential } = require("@azure/openai");
+const { Octokit } = require("@octokit/rest");
+const parseDiff = require("parse-diff");
+const minimatch = require("minimatch");
+const express = require("express");
 
-const GITHUB_TOKEN: string = core.getInput("GITHUB_TOKEN");
-const OPENAI_API_KEY: string = core.getInput("OPENAI_API_KEY");
-const OPENAI_API_MODEL: string = core.getInput("OPENAI_API_MODEL");
+const GITHUB_TOKEN = core.getInput("GITHUB_TOKEN");
+const OPENAI_API_KEY = core.getInput("OPENAI_API_KEY");
+const OPENAI_API_MODEL = core.getInput("OPENAI_API_MODEL");
 
 const octokit = new Octokit({ auth: GITHUB_TOKEN });
 
-const openai = new OpenAIClient("https://reviewer-ai.openai.azure.com/",new AzureKeyCredential(OPENAI_API_KEY)) ;
+const openai = new OpenAIClient("https://reviewer-ai.openai.azure.com/", new AzureKeyCredential(OPENAI_API_KEY));
 
 const app = express();
 const port = process.env.PORT || 3000;
 
-app.get('/health', (req: Request, res: Response) => {
+app.get('/health', (req, res) => {
   res.status(200).json({ status: 'UP' });
 });
 
@@ -25,15 +25,7 @@ app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
 
-interface PRDetails {
-  owner: string;
-  repo: string;
-  pull_number: number;
-  title: string;
-  description: string;
-}
-
-async function getPRDetails(): Promise<PRDetails> {
+async function getPRDetails() {
   const { repository, number } = JSON.parse(
     readFileSync(process.env.GITHUB_EVENT_PATH || "", "utf8")
   );
@@ -51,26 +43,18 @@ async function getPRDetails(): Promise<PRDetails> {
   };
 }
 
-async function getDiff(
-  owner: string,
-  repo: string,
-  pull_number: number
-): Promise<string | null> {
+async function getDiff(owner, repo, pull_number) {
   const response = await octokit.pulls.get({
     owner,
     repo,
     pull_number,
     mediaType: { format: "diff" },
   });
-  // @ts-expect-error - response.data is a string
-  return response.data;
+  return response.data; // response.data is a string
 }
 
-async function analyzeCode(
-  parsedDiff: File[],
-  prDetails: PRDetails
-): Promise<Array<{ body: string; path: string; line: number }>> {
-  const comments: Array<{ body: string; path: string; line: number }> = [];
+async function analyzeCode(parsedDiff, prDetails) {
+  const comments = [];
 
   for (const file of parsedDiff) {
     if (file.to === "/dev/null") continue; // Ignore deleted files
@@ -88,7 +72,7 @@ async function analyzeCode(
   return comments;
 }
 
-function createPrompt(file: File, chunk: Chunk, prDetails: PRDetails): string {
+function createPrompt(file, chunk, prDetails) {
   return `Your task is to review pull requests. Instructions:
 - Provide the response in following JSON format:  {"reviews": [{"lineNumber":  <line_number>, "reviewComment": "<review comment>"}]}
 - Do not give positive comments or compliments.
@@ -97,9 +81,7 @@ function createPrompt(file: File, chunk: Chunk, prDetails: PRDetails): string {
 - Use the given description only for the overall context and only comment the code.
 - IMPORTANT: NEVER suggest adding comments to the code.
 
-Review the following code diff in the file "${
-    file.to
-  }" and take the pull request title and description into account when writing the response.
+Review the following code diff in the file "${file.to}" and take the pull request title and description into account when writing the response.
   
 Pull request title: ${prDetails.title}
 Pull request description:
@@ -113,17 +95,13 @@ Git diff to review:
 \`\`\`diff
 ${chunk.content}
 ${chunk.changes
-  // @ts-expect-error - ln and ln2 exists where needed
   .map((c) => `${c.ln ? c.ln : c.ln2} ${c.content}`)
   .join("\n")}
 \`\`\`
 `;
 }
 
-async function getAIResponse(prompt: string): Promise<Array<{
-  lineNumber: string;
-  reviewComment: string;
-}> | null> {
+async function getAIResponse(prompt) {
   const queryConfig = {
     model: OPENAI_API_MODEL,
     temperature: 0.2,
@@ -136,7 +114,7 @@ async function getAIResponse(prompt: string): Promise<Array<{
   try {
     const response = await openai.getChatCompletions(
       "reviewer-ai",
-     [ {role:"system", content: prompt}],
+      [{ role: "system", content: prompt }],
     );
 
     const res = response.choices[0].message?.content?.trim() || "{}";
@@ -147,14 +125,7 @@ async function getAIResponse(prompt: string): Promise<Array<{
   }
 }
 
-function createComment(
-  file: File,
-  chunk: Chunk,
-  aiResponses: Array<{
-    lineNumber: string;
-    reviewComment: string;
-  }>
-): Array<{ body: string; path: string; line: number }> {
+function createComment(file, chunk, aiResponses) {
   return aiResponses.flatMap((aiResponse) => {
     if (!file.to) {
       return [];
@@ -167,12 +138,7 @@ function createComment(
   });
 }
 
-async function createReviewComment(
-  owner: string,
-  repo: string,
-  pull_number: number,
-  comments: Array<{ body: string; path: string; line: number }>
-): Promise<void> {
+async function createReviewComment(owner, repo, pull_number, comments) {
   await octokit.pulls.createReview({
     owner,
     repo,
@@ -184,7 +150,7 @@ async function createReviewComment(
 
 async function main() {
   const prDetails = await getPRDetails();
-  let diff: string | null;
+  let diff;
   const eventData = JSON.parse(
     readFileSync(process.env.GITHUB_EVENT_PATH ?? "", "utf8")
   );

@@ -8,6 +8,7 @@
   "scripts": {
     "build": "tsc",
     "package": "ncc build --source-map --license licenses.txt",
+    "start": "node src/main.js",
     "format": "prettier --write .",
     "lint": "prettier --check ."
   },
