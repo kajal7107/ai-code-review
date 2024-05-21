@@ -1,20 +1,20 @@
-const { readFileSync } = require("fs");
-const core = require("@actions/core");
-const { OpenAIClient, AzureKeyCredential } = require("@azure/openai");
-const { Octokit } = require("@octokit/rest");
-const parseDiff = require("parse-diff");
-const minimatch = require("minimatch");
-const express = require("express");
+import { readFileSync } from "fs";
+import * as core from "@actions/core";
+import { OpenAIClient, AzureKeyCredential } from "@azure/openai";
+import { Octokit } from "@octokit/rest";
+import parseDiff from "parse-diff";
+import minimatch from "minimatch";
+import express from "express";
+import { createServer } from "node:http";
+import pkg from 'eventsource';
+const  EventSource  = pkg;
+import { Webhooks, createNodeMiddleware } from "@octokit/webhooks";
 
 const GITHUB_TOKEN = core.getInput("GITHUB_TOKEN");
 const OPENAI_API_KEY = core.getInput("OPENAI_API_KEY");
 const OPENAI_API_MODEL = core.getInput("OPENAI_API_MODEL");
 
 const octokit = new Octokit({ auth: GITHUB_TOKEN });
-
-import EventSource from "eventsource"
-import { Webhooks, createNodeMiddleware } from "@octokit/webhooks";
-import { createServer } from "node:http";
 const webhooks = new Webhooks({
   secret: "mysecret",
 });
@@ -39,7 +39,7 @@ source.onmessage = (event) => {
     .catch(console.error);
 };
 
-const openai = new OpenAIClient("https://reviewer-ai.openai.azure.com/", new AzureKeyCredential(OPENAI_API_KEY));
+const openai = new OpenAIClient("https://reviewer-ai.openai.azure.com/", new AzureKeyCredential("6c3f4acf90a54a62a948250a67fc5f91"));
 
 const app = express();
 const port = process.env.PORT || 3000;
