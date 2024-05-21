@@ -4,6 +4,7 @@ import {OpenAIClient, AzureKeyCredential }from "@azure/openai";
 import { Octokit } from "@octokit/rest";
 import parseDiff, { Chunk, File } from "parse-diff";
 import minimatch from "minimatch";
+import express, { Request, Response } from 'express';
 
 const GITHUB_TOKEN: string = core.getInput("GITHUB_TOKEN");
 const OPENAI_API_KEY: string = core.getInput("OPENAI_API_KEY");
@@ -12,6 +13,17 @@ const OPENAI_API_MODEL: string = core.getInput("OPENAI_API_MODEL");
 const octokit = new Octokit({ auth: GITHUB_TOKEN });
 
 const openai = new OpenAIClient("https://reviewer-ai.openai.azure.com/",new AzureKeyCredential(OPENAI_API_KEY) ) ;
+
+const app = express();
+const port = process.env.PORT || 3000;
+
+app.get('/health', (req: Request, res: Response) => {
+  res.status(200).json({ status: 'UP' });
+});
+
+app.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
+});
 
 interface PRDetails {
   owner: string;
