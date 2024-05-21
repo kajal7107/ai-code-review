@@ -12,6 +12,33 @@ const OPENAI_API_MODEL = core.getInput("OPENAI_API_MODEL");
 
 const octokit = new Octokit({ auth: GITHUB_TOKEN });
 
+import EventSource from "eventsource"
+import { Webhooks, createNodeMiddleware } from "@octokit/webhooks";
+import { createServer } from "node:http";
+const webhooks = new Webhooks({
+  secret: "mysecret",
+});
+
+webhooks.onAny(({ id, name, payload }) => {
+  console.log(name, "event received");
+});
+
+createServer(createNodeMiddleware(webhooks)).listen(3000);
+
+const webhookProxyUrl = "https://smee.io/vjSkLRHrlR0rH6sc"; // replace with your own Webhook Proxy URL
+const source = new EventSource(webhookProxyUrl);
+source.onmessage = (event) => {
+  const webhookEvent = JSON.parse(event.data);
+  webhooks
+    .verifyAndReceive({
+      id: webhookEvent["x-request-id"],
+      name: webhookEvent["x-github-event"],
+      signature: webhookEvent["x-hub-signature"],
+      payload: JSON.stringify(webhookEvent.body),
+    })
+    .catch(console.error);
+};
+
 const openai = new OpenAIClient("https://reviewer-ai.openai.azure.com/", new AzureKeyCredential(OPENAI_API_KEY));
 
 const app = express();
