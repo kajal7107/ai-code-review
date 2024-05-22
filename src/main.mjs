@@ -16,7 +16,7 @@ const OPENAI_API_KEY = core.getInput("OPENAI_API_KEY");
 const OPENAI_API_MODEL = core.getInput("OPENAI_API_MODEL");
 const GITHUB_EVENT_PATH= core.getInput("GITHUB_EVENT_PATH");
 
-const auth = createTokenAuth("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");
+const auth = createTokenAuth(process.env.GITHUB_TOKEN);
 const { token } = await auth();
 console.log(token, "token");
 
