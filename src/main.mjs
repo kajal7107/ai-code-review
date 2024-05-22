@@ -9,33 +9,50 @@ import { createServer } from "node:http";
 import pkg from 'eventsource';
 const  EventSource  = pkg;
 import { Webhooks, createNodeMiddleware } from "@octokit/webhooks";
+import { createTokenAuth } from "@octokit/auth-token";
 
 const GITHUB_TOKEN = core.getInput("GITHUB_TOKEN");
 const OPENAI_API_KEY = core.getInput("OPENAI_API_KEY");
 const OPENAI_API_MODEL = core.getInput("OPENAI_API_MODEL");
+const GITHUB_EVENT_PATH= core.getInput("GITHUB_EVENT_PATH");
 
-const octokit = new Octokit({ auth: GITHUB_TOKEN });
+const auth = createTokenAuth("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");
+const { token } = await auth();
+console.log(token, "token");
+
+
+const octokit = new Octokit({ 
+  //auth: GITHUB_TOKEN 
+  auth: token
+});
 const webhooks = new Webhooks({
-  secret: "mysecret",
+  secret: "9c7beb8a-95ce-4509-9263-405965c68e43",
 });
 
 webhooks.onAny(({ id, name, payload }) => {
   console.log(name, "event received");
 });
 
-createServer(createNodeMiddleware(webhooks)).listen(3000);
+createServer(createNodeMiddleware(webhooks)).listen(8080);
 
-const webhookProxyUrl = "https://smee.io/vjSkLRHrlR0rH6sc"; // replace with your own Webhook Proxy URL
+const webhookProxyUrl = "https://smee.io/CrtUa0Qts3BR9Ca"; // replace with your own Webhook Proxy URL
 const source = new EventSource(webhookProxyUrl);
 source.onmessage = (event) => {
   const webhookEvent = JSON.parse(event.data);
-  webhooks
-    .verifyAndReceive({
-      id: webhookEvent["x-request-id"],
-      name: webhookEvent["x-github-event"],
-      signature: webhookEvent["x-hub-signature"],
-      payload: JSON.stringify(webhookEvent.body),
-    })
+  console.log("Received webhook event:", webhookEvent["x-github-event"])
+  webhooks.receive({
+     id: webhookEvent["x-request-id"],
+    name: webhookEvent["x-github-event"],
+    payload: webhookEvent.body,
+  })
+  .then(console.log)
+  
+    // .verifyAndReceive({
+    //   id: webhookEvent["x-request-id"],
+    //   name: webhookEvent["x-github-event"],
+    //  // signature: webhookEvent["x-hub-signature"],
+    //   payload: JSON.stringify(webhookEvent.body),
+    // })
     .catch(console.error);
 };
 
@@ -52,21 +69,27 @@ app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
 
-async function getPRDetails() {
-  const { repository, number } = JSON.parse(
-    readFileSync(process.env.GITHUB_EVENT_PATH || "", "utf8")
-  );
-  const prResponse = await octokit.pulls.get({
-    owner: repository.owner.login,
-    repo: repository.name,
-    pull_number: number,
-  });
+async function getPRDetails(payload) {
+  // const { repository, number } = JSON.parse(
+  //   payload
+  //  //readFileSync(process.env.GITHUB_EVENT_PATH || "", "utf8")
+  //  // readFileSync(GITHUB_EVENT_PATH||"", "utf8")
+  // );
+  const repository=payload.repository;
+  const number=payload.number;
+  // const prResponse = await octokit.pulls.get({
+  //   owner: repository.owner.login,
+  //   repo: repository.name,
+  //   pull_number: number,
+  // });
   return {
     owner: repository.owner.login,
     repo: repository.name,
     pull_number: number,
-    title: prResponse.data.title ?? "",
-    description: prResponse.data.body ?? "",
+    //title: prResponse.data.title ?? "",
+   // description: prResponse.data.body ?? "",
+   title:payload.pull_request.title,
+    description:payload.pull_request.body,
   };
 }
 
@@ -175,15 +198,18 @@ async function createReviewComment(owner, repo, pull_number, comments) {
   });
 }
 
-async function main() {
-  const prDetails = await getPRDetails();
+async function main(payload) {
+  const prDetails = await getPRDetails(payload);
   let diff;
-  const eventData = JSON.parse(
-    readFileSync(process.env.GITHUB_EVENT_PATH ?? "", "utf8")
-  );
+  // const eventData = JSON.parse(
+  //   //readFileSync(process.env.GITHUB_EVENT_PATH ?? "", "utf8")
+  //  // readFileSync(GITHUB_EVENT_PATH ??"","utf8")
+  // );
+  const eventData=payload;
 
   if (eventData.action === "opened") {
     diff = await getDiff(
+
       prDetails.owner,
       prDetails.repo,
       prDetails.pull_number
@@ -237,7 +263,12 @@ async function main() {
   }
 }
 
-main().catch((error) => {
+webhooks.on("pull_request", async (event) => {
+ // const webhookEvent = event.data;
+ // const payload = webhookEvent;
+  console.log("Received webhook event:", event);
+main(event.payload).catch((error) => {
   console.error("Error:", error);
   process.exit(1);
+});
 });

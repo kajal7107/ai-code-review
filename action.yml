@@ -17,8 +17,8 @@ inputs:
     default: ""
 runs:
   using: "node20"
-  #main: "dist/index.js"
-  main: "src/main.js"
+  main: "dist/index.js"
+  #main: "src/main.js"
 branding:
   icon: "aperture"
   color: "green"
