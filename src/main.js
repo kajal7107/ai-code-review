@@ -185,8 +185,8 @@ async function getAIResponse(prompt) {
       "code-reviewer-ai",
       [{ role: "system", content: prompt }],
     );
-
-    const res = response.choices[0].message?.content?.trim() || "{}";
+    
+    const res = response.choices[0].message?.content?.trim().replace('```json',"").replace("```","") || "{}";
     return JSON.parse(res).reviews;
   } catch (error) {
     console.error("Error:", error);
