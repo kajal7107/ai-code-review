@@ -41,26 +41,26 @@ webhooks.onAny(({ id, name, payload }) => {
 
 // createServer(createNodeMiddleware(webhooks)).listen(8080);
 
-const webhookProxyUrl = process.env.WEBHOOK_PROXY_URL; // replace with your own Webhook Proxy URL
-const source = new EventSource(webhookProxyUrl);
-source.onmessage = (event) => {
-  const webhookEvent = JSON.parse(event.data);
-  //console.log("Received webhook event:", webhookEvent["x-github-event"])
-  webhooks.receive({
-     id: webhookEvent["x-request-id"],
-    name: webhookEvent["x-github-event"],
-    payload: webhookEvent.body,
-  })
-  .then(console.log)
+// const webhookProxyUrl = process.env.WEBHOOK_PROXY_URL; // replace with your own Webhook Proxy URL
+// const source = new EventSource(webhookProxyUrl);
+// source.onmessage = (event) => {
+//   const webhookEvent = JSON.parse(event.data);
+//   //console.log("Received webhook event:", webhookEvent["x-github-event"])
+//   webhooks.receive({
+//      id: webhookEvent["x-request-id"],
+//     name: webhookEvent["x-github-event"],
+//     payload: webhookEvent.body,
+//   })
+//   .then(console.log)
   
-    // .verifyAndReceive({
-    //   id: webhookEvent["x-request-id"],
-    //   name: webhookEvent["x-github-event"],
-    //  // signature: webhookEvent["x-hub-signature"],
-    //   payload: JSON.stringify(webhookEvent.body),
-    // })
-    .catch(console.error);
-};
+//     // .verifyAndReceive({
+//     //   id: webhookEvent["x-request-id"],
+//     //   name: webhookEvent["x-github-event"],
+//     //  // signature: webhookEvent["x-hub-signature"],
+//     //   payload: JSON.stringify(webhookEvent.body),
+//     // })
+//     .catch(console.error);
+// };
 
 const openai = new OpenAIClient(openaiEndpoint, new AzureKeyCredential(openaiApiKey));
 
@@ -71,9 +71,17 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'UP' });
 });
 
-app.use("/webhooks", createNodeMiddleware(webhooks));
+
+// app.get('/webhooks', (req, res) => {
+//     createServer(createNodeMiddleware(webhooks))
+//     res.status(200).json({ status: 'UP' });
+//   });
+  
+
+app.use( createNodeMiddleware(webhooks,{path: "/webhooks"}));
 
 app.listen(port, () => {
+
   console.log(`Server is running on port ${port}`);
 });
 
