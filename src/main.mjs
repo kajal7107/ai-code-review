@@ -10,13 +10,17 @@ import pkg from 'eventsource';
 const  EventSource  = pkg;
 import { Webhooks, createNodeMiddleware } from "@octokit/webhooks";
 import { createTokenAuth } from "@octokit/auth-token";
+import dotenv from "dotenv";
+dotenv.config();
 
 const GITHUB_TOKEN = core.getInput("GITHUB_TOKEN");
 const OPENAI_API_KEY = core.getInput("OPENAI_API_KEY");
 const OPENAI_API_MODEL = core.getInput("OPENAI_API_MODEL");
 const GITHUB_EVENT_PATH= core.getInput("GITHUB_EVENT_PATH");
+const githubToken =process.env.GITHUB_TOKEN_PAT;
+console.log(githubToken, "githubToken");
 
-const auth = createTokenAuth(process.env.GITHUB_TOKEN);
+const auth = createTokenAuth(githubToken);
 const { token } = await auth();
 console.log(token, "token");
 
@@ -119,6 +123,7 @@ async function analyzeCode(parsedDiff, prDetails) {
       }
     }
   }
+  console.log("Comments:", comments);
   return comments;
 }
 
@@ -198,6 +203,8 @@ async function createReviewComment(owner, repo, pull_number, comments) {
   });
 }
 
+
+
 async function main(payload) {
   const prDetails = await getPRDetails(payload);
   let diff;
@@ -266,7 +273,7 @@ async function main(payload) {
 webhooks.on("pull_request", async (event) => {
  // const webhookEvent = event.data;
  // const payload = webhookEvent;
-  console.log("Received webhook event:", event);
+ // console.log("Received webhook event:", event);
 main(event.payload).catch((error) => {
   console.error("Error:", error);
   process.exit(1);
