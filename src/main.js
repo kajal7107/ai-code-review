@@ -71,9 +71,17 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'UP' });
 });
 
-app.use("/webhooks", createNodeMiddleware(webhooks));
+
+// app.get('/webhooks', (req, res) => {
+//     createServer(createNodeMiddleware(webhooks))
+//     res.status(200).json({ status: 'UP' });
+//   });
+  
+
+app.use( createNodeMiddleware(webhooks,{path: "/webhooks"}));
 
 app.listen(port, () => {
+
   console.log(`Server is running on port ${port}`);
 });
 
