@@ -1,0 +1,28 @@
+{
+  "name": "ai-code-review",
+  "version": "1.0.0",
+  "description": "Bot to create code review on github.",
+  "main": "src/main.js",
+  "type":"module",
+  "scripts": {
+    "test": "test",
+    "start":"node src/main.js",
+    "dev":"nodemon src/main.js"
+    
+  },
+  "author": "Kajal & Suman",
+  "license": "ISC",
+  "dependencies": {
+    "@actions/core": "^1.10.1",
+    "@azure/openai": "^1.0.0-beta.12",
+    "@octokit/auth-token": "^5.1.1",
+    "@octokit/rest": "^20.1.1",
+    "@octokit/webhooks": "^13.2.7",
+    "dotenv": "^16.4.5",
+    "eventsource": "^2.0.2",
+    "express": "^4.19.2",
+    "minimatch": "^9.0.4",
+    "nodemon": "^3.1.0",
+    "parse-diff": "^0.11.1"
+  }
+}
