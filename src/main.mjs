@@ -38,7 +38,7 @@ webhooks.onAny(({ id, name, payload }) => {
 
 createServer(createNodeMiddleware(webhooks)).listen(8080)
 
-const webhookProxyUrl = "https://smee.io/CrtUa0Qts3BR9Ca" // replace with your own Webhook Proxy URL
+const webhookProxyUrl = "https://smee.io/h8zNGvAnWiudioTm" // replace with your own Webhook Proxy URL
 const source = new EventSource(webhookProxyUrl)
 source.onmessage = (event) => {
   const webhookEvent = JSON.parse(event.data)
