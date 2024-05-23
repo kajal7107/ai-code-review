@@ -3,7 +3,7 @@ import * as core from "@actions/core";
 import { OpenAIClient, AzureKeyCredential } from "@azure/openai";
 import { Octokit } from "@octokit/rest";
 import parseDiff from "parse-diff";
-import minimatch from "minimatch";
+//import minimatch from "minimatch";
 import express from "express";
 import { createServer } from "node:http";
 import pkg from 'eventsource';
@@ -249,15 +249,37 @@ async function main(payload) {
   const parsedDiff = parseDiff(diff);
 
   const excludePatterns = core
-    .getInput("exclude")
-    .split(",")
-    .map((s) => s.trim());
+  .getInput("exclude")
+  .split(",")
+  .map((s) => s.trim());
 
-  const filteredDiff = parsedDiff.filter((file) => {
-    return !excludePatterns.some((pattern) =>
-      minimatch(file.to ?? "", pattern)
+  function matchPattern(path, pattern) {
+    const regex = new RegExp(
+      '^' +
+      pattern
+        .replace(/([.+^=!:${}()|\[\]\/\\])/g, '\\$1') // Escape special characters
+        .replace(/\*/g, '.*') // Replace * with .*
+        .replace(/\?/g, '.') // Replace ? with .
+        .replace(/\/\*\*\/?/g, '(/.*)?') // Replace ** with /.* or /?.*
+      + '$'
     );
+    return regex.test(path);
+  }
+  
+  function isExcluded(file, patterns) {
+    return patterns.some((pattern) => matchPattern(file, pattern));
+  }
+  
+  const filteredDiff = parsedDiff.filter((file) => {
+    return !isExcluded(file.to ?? "", excludePatterns);
   });
+  
+
+//   const filteredDiff = parsedDiff.filter((file) => {
+//     return !excludePatterns.some((pattern) =>
+//       minimatch(file.to ?? "", pattern)
+//     );
+//   });
 
   const comments = await analyzeCode(filteredDiff, prDetails);
   if (comments.length > 0) {
