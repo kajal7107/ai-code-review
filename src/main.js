@@ -143,6 +143,8 @@ function createPrompt(file, chunk, prDetails) {
   return `Your task is to review pull requests. Instructions:
 - Provide the response in following JSON format:  {"reviews": [{"lineNumber":  <line_number>, "reviewComment": "<review comment>"}]}
 - Do not give positive comments or compliments.
+-Calculate time complexity and space complexity of the code.
+- Calculate McCabe complexity numbers for individual functions and mention it in the comments
 - Provide comments and suggestions ONLY if there is something to improve, otherwise "reviews" should be an empty array.
 - Write the comment in GitHub Markdown format.
 - Use the given description only for the overall context and only comment the code.
@@ -180,7 +182,7 @@ async function getAIResponse(prompt) {
 
   try {
     const response = await openai.getChatCompletions(
-      "reviewer-ai",
+      "code-reviewer-ai",
       [{ role: "system", content: prompt }],
     );
 
