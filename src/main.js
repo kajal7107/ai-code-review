@@ -18,11 +18,13 @@ const OPENAI_API_KEY = core.getInput("OPENAI_API_KEY");
 const OPENAI_API_MODEL = core.getInput("OPENAI_API_MODEL");
 const GITHUB_EVENT_PATH= core.getInput("GITHUB_EVENT_PATH");
 const githubToken =process.env.GITHUB_TOKEN_PAT;
-console.log(githubToken, "githubToken");
+const openaiApiKey = process.env.OPENAI_API_KEY;
+const openaiEndpoint = process.env.OPENAI_ENDPOINT;
+//console.log(githubToken, "githubToken");
 
 const auth = createTokenAuth(githubToken);
 const { token } = await auth();
-console.log(token, "token");
+//console.log(token, "token");
 
 
 const octokit = new Octokit({ 
@@ -30,20 +32,20 @@ const octokit = new Octokit({
   auth: token
 });
 const webhooks = new Webhooks({
-  secret: "9c7beb8a-95ce-4509-9263-405965c68e43",
+  secret: process.env.WEBHOOK_SECRET,
 });
 
 webhooks.onAny(({ id, name, payload }) => {
-  console.log(name, "event received");
+  //console.log(name, "event received");
 });
 
-createServer(createNodeMiddleware(webhooks)).listen(8080);
+// createServer(createNodeMiddleware(webhooks)).listen(8080);
 
-const webhookProxyUrl = "https://smee.io/CrtUa0Qts3BR9Ca"; // replace with your own Webhook Proxy URL
+const webhookProxyUrl = process.env.WEBHOOK_PROXY_URL; // replace with your own Webhook Proxy URL
 const source = new EventSource(webhookProxyUrl);
 source.onmessage = (event) => {
   const webhookEvent = JSON.parse(event.data);
-  console.log("Received webhook event:", webhookEvent["x-github-event"])
+  //console.log("Received webhook event:", webhookEvent["x-github-event"])
   webhooks.receive({
      id: webhookEvent["x-request-id"],
     name: webhookEvent["x-github-event"],
@@ -60,7 +62,7 @@ source.onmessage = (event) => {
     .catch(console.error);
 };
 
-const openai = new OpenAIClient("https://reviewer-ai.openai.azure.com/", new AzureKeyCredential("6c3f4acf90a54a62a948250a67fc5f91"));
+const openai = new OpenAIClient(openaiEndpoint, new AzureKeyCredential(openaiApiKey));
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -68,6 +70,8 @@ const port = process.env.PORT || 3000;
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'UP' });
 });
+
+app.use("/webhooks", createNodeMiddleware(webhooks));
 
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
@@ -123,7 +127,7 @@ async function analyzeCode(parsedDiff, prDetails) {
       }
     }
   }
-  console.log("Comments:", comments);
+ // console.log("Comments:", comments);
   return comments;
 }
 
